@@ -17,6 +17,9 @@ Here's what a puzzle url looks like:
 """
 
 
+__author__ = "tjhindman"
+
+
 import os
 import re
 import sys
@@ -32,15 +35,39 @@ def read_urls(filename):
     Screens out duplicate urls and returns the urls sorted into
     increasing order.
     """
-    
+
+    urls = []
+
+    def sorting(url):
+        match = re.search(r'(\w+)-(\w+)\.\w+', url)
+
+        return match.group(2) if match else url
+
+
     with open(filename) as f:
-        data = f.read()
-        urls = re.findall(r'GET (\S+.jpg)', data)
+        for line in f:
+            # Find the path which is after the GET and surrounded by spaces.
+            match = re.search(r'"GET (\S+)', line)
 
-        for i, url in enumerate(urls):
-            urls[i] = 'http://code.google.com' + url
+            if match:
+                path = match.group(1)
 
-        return sorted(set(urls), key=lambda x: re.findall(r'\S{4}.jpg', x)[0])
+                if 'puzzle' in path:
+                    urls.append('http://code.google.com' + path)
+
+    return sorted(set(urls), key=sorting)
+
+        # for i, url in enumerate(match):
+        #     match[i] = url
+
+
+        # data = f.read()
+        # urls = re.findall(r'GET (\S+.jpg)', data)
+
+        # for i, url in enumerate(urls):
+        #     urls[i] = 'http://code.google.com' + url
+
+        # return sorted(set(urls), key=lambda x: re.findall(r'\S{4}.jpg', x)[0])
 
 
 def download_images(img_urls, dest_dir):
@@ -67,8 +94,11 @@ def download_images(img_urls, dest_dir):
         img_list = []
 
         for i, url in enumerate(img_urls):
+            print("Retrieving image from {}...".format(url))
             urllib.urlretrieve(url, 'img{}'.format(i))
+            print("Copying image to {}...".format(dest_dir))
             shutil.move('img{}'.format(i), '{}'.format(dest_dir))
+            print("Populating img_list with HTML image tag...")
             img_list.append("<img src='img{}'>".format(i))
 
         shutil.move('index.html', dest_dir)
